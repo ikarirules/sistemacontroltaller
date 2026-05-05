@@ -118,41 +118,94 @@ $this->title = 'Dalinda Confecciones';
              ?>
     </div>
 
-<?php use yii\web\YiiAsset;
+<?php
+$this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js', ['position' => \yii\web\View::POS_HEAD]);
+$labels    = json_encode(array_column($chartData, 'label'));
+$ingresos  = json_encode(array_column($chartData, 'ingresos'));
+$egresos   = json_encode(array_column($chartData, 'egresos'));
+$saldos    = json_encode(array_map(fn($m) => $m['ingresos'] - $m['egresos'], $chartData));
+?>
 
-YiiAsset::register($this); // Esto carga jQuery y Bootstrap (si los usas)
+<div style="margin-top:30px;">
+    <h4>Ingresos y Egresos — últimos 18 meses</h4>
+    <canvas id="chartBarras" height="100"></canvas>
+</div>
 
-$this->registerJsFile('https://cdn.jsdelivr.net/npm/chart.js'); // Incluye Chart.js desde un CDN
-
- ?>
-<canvas id="graficoIngresosEgresos" width="400" height="200"></canvas>
+<div style="margin-top:40px; margin-bottom:40px;">
+    <h4>Saldo neto mensual — últimos 18 meses</h4>
+    <canvas id="chartSaldo" height="80"></canvas>
+</div>
 
 <script>
-var ctx = document.getElementById("graficoIngresosEgresos").getContext('2d');
+(function() {
+    var labels   = <?= $labels ?>;
+    var ingresos = <?= $ingresos ?>;
+    var egresos  = <?= $egresos ?>;
+    var saldos   = <?= $saldos ?>;
 
-var ingresos = <?= json_encode($ingresos) ?>;
-var egresos = <?= json_encode($egresos) ?>;
-
-var meses = ingresos.map(item => item.mes); // Asumiendo que los meses están numerados del 1 al 12
-
-var chart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: meses,
-        datasets: [
-            {
-                label: 'Ingresos',
-                data: ingresos.map(item => item.total),
-                backgroundColor: 'green'
-            },
-            {
-                label: 'Egresos',
-                data: egresos.map(item => item.total),
-                backgroundColor: 'red'
+    new Chart(document.getElementById('chartBarras'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Ingresos',
+                    data: ingresos,
+                    backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                    borderColor: 'rgba(39, 174, 96, 1)',
+                    borderWidth: 1,
+                },
+                {
+                    label: 'Egresos',
+                    data: egresos,
+                    backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                    borderColor: 'rgba(192, 57, 43, 1)',
+                    borderWidth: 1,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: v => '$' + v.toLocaleString('es-AR')
+                    }
+                }
             }
-        ]
-    },
-});
+        }
+    });
+
+    new Chart(document.getElementById('chartSaldo'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Saldo neto',
+                data: saldos,
+                borderColor: 'rgba(52, 152, 219, 1)',
+                backgroundColor: 'rgba(52, 152, 219, 0.15)',
+                borderWidth: 2,
+                pointRadius: 3,
+                fill: true,
+                tension: 0.3,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: {
+                y: {
+                    ticks: {
+                        callback: v => '$' + v.toLocaleString('es-AR')
+                    }
+                }
+            }
+        }
+    });
+})();
 </script>
 
 

@@ -142,32 +142,56 @@ class SiteController extends Controller
             $totalGen[$categoria['descripcion']] = $categoriaArrayGen;      
         }
 
-        $ingresosMensuales = Caja::find()
-            ->select(['MONTH(fecha) AS mes', 'SUM(monto) AS total'])
-            ->where(['tipo' => 0]) // 0 para ingresos
-            //->andWhere(['tus_filtros']) // Agrega tus filtros
-            ->groupBy(['mes'])
+        // Últimos 18 meses para el gráfico
+        $fechaDesde = date('Y-m-01', strtotime('-17 months'));
+        $nombresMeses = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+        $meses18 = [];
+        for ($i = 17; $i >= 0; $i--) {
+            $key   = date('Y-m', strtotime("-$i months"));
+            $partes = explode('-', $key);
+            $meses18[$key] = [
+                'label'    => $nombresMeses[(int)$partes[1]] . ' ' . $partes[0],
+                'ingresos' => 0,
+                'egresos'  => 0,
+            ];
+        }
+
+        $ingresosRaw = Caja::find()
+            ->select(["DATE_FORMAT(fecha, '%Y-%m') AS periodo", 'SUM(monto) AS total'])
+            ->where(['tipo' => 0])
+            ->andWhere(['>=', 'fecha', $fechaDesde])
+            ->groupBy(['periodo'])
             ->asArray()
             ->all();
 
-        $egresosMensuales = Caja::find()
-            ->select(['MONTH(fecha) AS mes', 'SUM(monto) AS total'])
-            ->where(['tipo' => 1]) // 1 para egresos
-            //->andWhere(['tus_filtros']) // Agrega tus filtros
-            ->groupBy(['mes'])
+        $egresosRaw = Caja::find()
+            ->select(["DATE_FORMAT(fecha, '%Y-%m') AS periodo", 'SUM(monto) AS total'])
+            ->where(['tipo' => 1])
+            ->andWhere(['>=', 'fecha', $fechaDesde])
+            ->groupBy(['periodo'])
             ->asArray()
             ->all();
 
-            //var_dump($ingresosMensuales); die();
+        foreach ($ingresosRaw as $row) {
+            if (isset($meses18[$row['periodo']])) {
+                $meses18[$row['periodo']]['ingresos'] = (int)$row['total'];
+            }
+        }
+        foreach ($egresosRaw as $row) {
+            if (isset($meses18[$row['periodo']])) {
+                $meses18[$row['periodo']]['egresos'] = (int)$row['total'];
+            }
+        }
 
+        $chartData = array_values($meses18);
 
         return $this->render('index', [
-            'periodos' => $periodos,
-            'totales' => $totalMesAct,
-            'totalGen' => $totalGen,
-            'ingresos' => $ingresosMensuales,
-            'egresos' => $egresosMensuales,
-            'periodoSelect' => $periodoSelect
+            'periodos'    => $periodos,
+            'totales'     => $totalMesAct,
+            'totalGen'    => $totalGen,
+            'chartData'   => $chartData,
+            'periodoSelect' => $periodoSelect,
         ]);
 
     }
