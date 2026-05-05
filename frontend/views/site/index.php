@@ -126,12 +126,12 @@ $egresos   = json_encode(array_column($chartData, 'egresos'));
 $saldos    = json_encode(array_map(fn($m) => $m['ingresos'] - $m['egresos'], $chartData));
 ?>
 
-<div style="margin-top:30px;">
+<div style="margin-top:30px; background:#fff; border-radius:8px; padding:16px 20px;">
     <h4>Ingresos y Egresos — últimos 18 meses</h4>
     <canvas id="chartBarras" height="100"></canvas>
 </div>
 
-<div style="margin-top:40px; margin-bottom:40px;">
+<div style="margin-top:24px; margin-bottom:40px; background:#fff; border-radius:8px; padding:16px 20px;">
     <h4>Saldo neto mensual — últimos 18 meses</h4>
     <canvas id="chartSaldo" height="80"></canvas>
 </div>
