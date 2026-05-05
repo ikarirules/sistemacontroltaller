@@ -39,6 +39,7 @@ AppAsset::register($this);
         ['label' => '', 'url' => ['/site/index']],
         ['label' => 'Cliente', 'url' => ['/cliente/index']],
         ['label' => 'Caja', 'url' => ['/caja/index']],
+        ['label' => 'Cierre', 'url' => ['/cierre/index']],
         [
             'label' => 'Ingreso',
             'url' => ['caja/create', 'dato' => 0],
